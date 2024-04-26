@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 const loader = new GLTFLoader();
 
@@ -27,9 +28,9 @@ const OFFSET_Y = 0.0;
 const OFFSET_Z = 20.75;
 const SCALE = 50;
 const MODEL_SCALE = 0.023;
-const ACCEL = 0.08;
-const DECAY = 0.01;
-const MAX_ANGLE = 0.03;
+const ACCEL = 0.00125;
+const DECAY = 0.98; 
+const MAX_ANGLE = 0.0385;
 
 const ANG_VEL_TS = 2.336;
 const ANG_VEL_SSS = 1.975;
@@ -62,7 +63,7 @@ loader.load(
     console.error(error);
   },
 );
-var angular_velocity = [0, 0, 0];
+var angular_velocity = new Vector3(0, 0, 0);
 var keys: { [index: string]: boolean } = {
   w: false,
   a: false,
@@ -93,50 +94,37 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (keys["w"]) {
-    angular_velocity[1] += ACCEL;
+    angular_velocity.y += ACCEL;
   }
   if (keys["s"]) {
-    angular_velocity[1] -= ACCEL;
+    angular_velocity.y -= ACCEL;
   }
   if (keys["a"]) {
-    angular_velocity[2] += ACCEL;
+    angular_velocity.z += ACCEL;
   }
   if (keys["d"]) {
-    angular_velocity[2] -= ACCEL;
+    angular_velocity.z -= ACCEL;
   }
   if (keys["e"]) {
-    angular_velocity[0] += ACCEL;
+    angular_velocity.x += ACCEL;
   }
   if (keys["q"]) {
-    angular_velocity[0] -= ACCEL;
+    angular_velocity.x -= ACCEL;
   }
   // Implement max speed and decay
-
-  angular_velocity[0] = Math.max(
-    -MAX_ANGLE,
-    Math.min(MAX_ANGLE, angular_velocity[0]),
-  );
-  angular_velocity[1] = Math.max(
-    -MAX_ANGLE,
-    Math.min(MAX_ANGLE, angular_velocity[1]),
-  );
-  angular_velocity[2] = Math.max(
-    -MAX_ANGLE,
-    Math.min(MAX_ANGLE, angular_velocity[2]),
-  );
-  group.rotateX(angular_velocity[0]);
-  group.rotateY(angular_velocity[1]);
-  group.rotateZ(angular_velocity[2]);
-
-  for (let i = 0; i < angular_velocity.length; i++) {
-    if (Math.abs(angular_velocity[i]) <= DECAY) {
-      angular_velocity[i] = 0;
-    } else if (angular_velocity[i] > DECAY) {
-      angular_velocity[i] -= DECAY;
-    } else if (angular_velocity[i] < -DECAY) {
-      angular_velocity[i] += DECAY;
-    }
+  if (angular_velocity.length() > MAX_ANGLE) {
+    angular_velocity.normalize();
+    angular_velocity.multiplyScalar(MAX_ANGLE);
   }
+
+    
+
+  group.rotateX(angular_velocity.x);
+  group.rotateY(angular_velocity.y);
+  group.rotateZ(angular_velocity.z);
+
+  angular_velocity.multiplyScalar(DECAY);
+  
 
   renderer.render(scene, camera);
 }
